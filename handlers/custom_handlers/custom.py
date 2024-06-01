@@ -13,7 +13,7 @@ from utils.database.add_history import add_user_history
 from utils.site_API.get_currencies_API import get_period_currencies_api, get_value_currency_api
 from utils.site_API.get_date import transform_date_format
 from keyboards.inline.get_currencies import get_currencies_buttons
-from keyboards.reply.back_main import edit_currencies_button, add_back_main_custom_button, remove_back_main_button
+from keyboards.reply.back_main import course_now_button, add_back_main_custom_button
 from states.custom_states import PeriodCurrency
 
 # Добавление календаря
@@ -39,7 +39,7 @@ def set_start_date(message: Message) -> None:
 			message.chat.id,
 			'С пустым списком ничего не смогу посчитать 🤔.\n'
 			'Добавьте в ваш список какую-либо валюту нажав на кнопку «Изменить список валюты».',
-			reply_markup=edit_currencies_button()
+			reply_markup=course_now_button()
 		)
 
 	else:
@@ -50,7 +50,7 @@ def set_start_date(message: Message) -> None:
 			'Я могу вывести значение курса валюты за выбранный период в виде графика.\n'
 			'Максимальный допустимый период 365 дней.\n'
 			'Для этого нужно ввести дату начала, дату конца и выбрать валюту из сохраненного списка.\n\n',
-			reply_markup=remove_back_main_button()
+			reply_markup=course_now_button()
 		)
 
 		# Вызов markup календаря
@@ -63,6 +63,20 @@ def set_start_date(message: Message) -> None:
 				month=now.month
 			)
 		)
+
+
+@bot.message_handler(state='*', func=lambda message: message.text == 'Курс за период')
+def back_main_page(message: Message) -> None:
+	"""
+	Возврат на стартовую страницу при нажатии на кнопку «Вернуться».
+
+	:param message: Сообщение
+	:return: None
+	"""
+	bot.delete_state(message.from_user.id, message.chat.id)
+	add_user_history(message.from_user.id, f'Переход к курсу за период по кнопке "{message.text}')
+
+	set_start_date(message)
 
 
 @bot.message_handler(state='*', func=lambda message: message.text == 'Вернуться к выбору периода')
@@ -101,7 +115,7 @@ def set_date_callback(call: CallbackQuery) -> None:
 			bot.send_message(
 				chat_id=call.from_user.id,
 				text=f'Вы указали начальную дату {set_date}.',
-				reply_markup=remove_back_main_button(),
+				reply_markup=course_now_button(),
 			)
 
 			add_user_history(
@@ -174,7 +188,7 @@ def set_date_callback(call: CallbackQuery) -> None:
 					bot.send_message(
 						chat_id=call.from_user.id,
 						text=f'Вы указали конечную дату {set_date}.',
-						reply_markup=remove_back_main_button(),
+						reply_markup=course_now_button(),
 					)
 					# Сохранение конечной даты у пользователя
 					data['end_date'] = set_date
@@ -226,17 +240,8 @@ def choose_currency(call: CallbackQuery) -> None:
 
 	bot.send_message(
 		call.message.chat.id,
-		'Выберите валюту из вашего сохраненного списка, чтобы продолжить.\n\n',
+		'Выберите валюту из вашего сохраненного списка, чтобы продолжить.',
 		reply_markup=markup
-	)
-
-	# Кнопка возврата к выбору периода и кнопка к изменению списка валют
-	markup_edit_currencies = add_back_main_custom_button()
-	bot.send_message(
-		call.message.chat.id,
-		'Чтобы сделать изменения в вашем списке валют, нажмите кнопку «Изменить список валют».\n'
-		'Если хотите изменить период, нажмите кнопку «Вернуться к выбору периода».',
-		reply_markup=markup_edit_currencies
 	)
 
 
@@ -257,6 +262,8 @@ def period_currency(call: CallbackQuery) -> None:
 		text=f'Вы выбрали валюту «{name_currency}».'
 	)
 
+	bot.send_message(chat_id=call.message.chat.id, text='Подождите, идет составление графика...')
+
 	# Инициализация графика
 	fig, ax = plt.subplots(figsize=(5, 2.7), layout='constrained')
 
@@ -271,6 +278,10 @@ def period_currency(call: CallbackQuery) -> None:
 		# Изменение формата в вид для API
 		data['start_date'] = transform_date_format(value=data['start_date'])
 		data['end_date'] = transform_date_format(value=data['end_date'])
+
+		# Если валютой является евро, тогда поменять его на рубль
+		if name_currency == 'EUR':
+			name_currency = 'RUB'
 
 		# Данные по датам от API
 		period_data = get_period_currencies_api(start_date=data['start_date'], end_date=data['end_date'])
@@ -288,7 +299,10 @@ def period_currency(call: CallbackQuery) -> None:
 		# Добавление курса валюты в список, если имя совпало
 		for currency, value in currencies.items():
 			if currency == name_currency:
-				value = round(float(value_rub) / float(value), 2)
+				if name_currency != 'RUB':
+					value = round(float(value_rub) / float(value), 2)
+				else:
+					value = round(value, 2)
 				values_y.append(value)
 				break
 
@@ -307,7 +321,7 @@ def period_currency(call: CallbackQuery) -> None:
 
 	# Если директория не существует, то создаем её
 	if not os.path.isdir(path):
-		os.mkdir(path)
+		os.makedirs(path)
 
 	# Сохраняем фигуру в виде файла
 	fig.savefig(f'{path}{name_file}', dpi=200)
@@ -319,3 +333,13 @@ def period_currency(call: CallbackQuery) -> None:
 	bot.send_photo(call.message.chat.id, photo)
 
 	bot.delete_state(call.from_user.id, call.message.chat.id)
+
+	# Кнопка возврата к выбору периода и кнопка к изменению списка валют
+	markup_edit_currencies = add_back_main_custom_button()
+
+	bot.send_message(
+		call.message.chat.id,
+		'Что бы вернуться на главную страницу нажмите «Главная».\n'
+		'Если хотите изменить период, нажмите кнопку «Вернуться к выбору периода».',
+		reply_markup=markup_edit_currencies
+	)

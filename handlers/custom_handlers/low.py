@@ -1,7 +1,7 @@
 from loader import bot
 from telebot.types import Message
 
-from keyboards.reply.back_main import edit_currencies_button
+from keyboards.reply.back_main import main_buttons
 from utils.site_API.get_currencies_API import get_value_currency_api
 from utils.site_API.get_date import get_datetime_now_api
 from utils.database.get_currencies import get_user_currencies
@@ -41,10 +41,25 @@ def output_course_now(message: Message) -> None:
 		)
 
 	# Добавление кнопки на редактирование списка валют пользователя
-	markup = edit_currencies_button()
+	markup = main_buttons()
 
 	bot_end_msg = (
-		'\nЧтобы обновить свой список валюты, нажмите на кнопку «Изменить список валюты».\n'
-		'Там можно будет добавить и удалить валюту из списка либо очистить весь список.')
+		'\nЧтобы обновить свой список валюты, нажмите на кнопку «Список валют».\n'
+		'Так же вы можете узнать сколько будет стоить конкретная валюта в рублях по кнопке "Посчитать курс"\n'
+		'Или же посмотреть график конкретной валюты за определенное время по кнопе "Курс за период".')
 
 	bot.send_message(message.chat.id, bot_message + bot_end_msg, parse_mode='html', reply_markup=markup)
+
+
+@bot.message_handler(state='*', func=lambda message: message.text in ['Вернуться', 'Главная'])
+def back_main_page(message: Message) -> None:
+	"""
+	Возврат на стартовую страницу при нажатии на кнопку «Вернуться».
+
+	:param message: Сообщение
+	:return: None
+	"""
+	bot.delete_state(message.from_user.id, message.chat.id)
+	add_user_history(message.from_user.id, f'Возврат к главной странице по кнопке {message.text}')
+
+	output_course_now(message)

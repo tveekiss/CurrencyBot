@@ -2,7 +2,7 @@ from loader import bot
 from telebot.types import Message
 
 from utils.database.get_history import get_user_history
-from keyboards.reply.back_main import remove_back_main_button
+from keyboards.reply.back_main import course_now_button
 
 
 @bot.message_handler(state='*', commands=['history'])
@@ -23,5 +23,5 @@ def view_history_user(message: Message) -> None:
 	for history in user_history:
 		bot_message += f'{history}\n'
 
-	markup = remove_back_main_button()
+	markup = course_now_button()
 	bot.send_message(message.chat.id, bot_message, reply_markup=markup)

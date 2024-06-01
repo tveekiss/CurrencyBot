@@ -3,6 +3,7 @@ from loader import bot
 
 from utils.database.get_user import get_or_create_user
 from utils.database.add_history import add_user_history
+from keyboards.reply.back_main import main_buttons
 
 
 @bot.message_handler(state='*', commands=["start"])
@@ -29,7 +30,8 @@ def bot_start(message: Message) -> None:
             f"Добро пожаловать в менеджер курса валют, {user_name}!\n"
             f"Я умею отслеживать актуальный курс и могу подсчитывать конвертацию "
             f"из рублей в любые выбранные валюты.\n"
-            f"Для подробного описания моих возможностей напишите /help"
+            f"Для подробного описания моих возможностей напишите /help",
+            reply_markup=main_buttons()
         )
     else:
         add_user_history(message.from_user.id, f'Переход на стартовую страницу (/start).')

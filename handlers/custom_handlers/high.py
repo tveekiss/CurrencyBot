@@ -2,7 +2,7 @@ from telebot.types import Message
 
 from loader import bot
 
-from keyboards.reply.back_main import edit_currencies_button
+from keyboards.reply.back_main import course_now_button, remove_keyboard_button
 from utils.database.get_currencies import get_user_currencies
 from utils.database.add_history import add_user_history
 from utils.site_API.get_currencies_API import get_value_currency_api
@@ -23,15 +23,30 @@ def set_wallet(message: Message) -> None:
 
 	user_currencies = get_user_currencies(message.from_user.id)
 
+	markup = remove_keyboard_button()
 	if user_currencies:
-		bot.send_message(message.chat.id, 'Введите сумму в рублях, которую необходимо перевести в курс валют.')
+		bot.send_message(message.chat.id, 'Введите сумму в рублях, которую необходимо перевести в курс валют.',
+						 reply_markup=markup)
 	else:
 		bot.send_message(
 			message.chat.id,
 			'У вас пустой список с валютами, я ничего не смогу посчитать 😢'
-			'\n\nЧтобы обновить свой список валюты, нажмите на кнопку «Изменить список валюты».\n'
-			'Там можно будет добавить и удалить валюту из списка либо очистить весь список.'
+			'\n\nЧто бы вернуться на главный экран введите "Главная" или нажмите сюда: /low.'
 		)
+
+
+@bot.message_handler(state='*', func=lambda message: message.text == 'Посчитать курс')
+def back_main_page(message: Message) -> None:
+	"""
+	Переход к функции рассчитыванию средств по курсу
+
+	:param message: Сообщение
+	:return: None
+	"""
+	bot.delete_state(message.from_user.id, message.chat.id)
+	add_user_history(message.from_user.id, f'Переход к расчету средств по кнопке "{message.text}"')
+
+	set_wallet(message)
 
 
 @bot.message_handler(state=CalculationWallet.calculate, func=lambda message: Message)
@@ -65,8 +80,7 @@ def calculation(message: Message) -> None:
 	bot_message = f'Вы ввели <u>{message.text} руб</u>. В других валютах это будет:\n\n'
 	bot_end_msg = (
 		f'\nВведите новую сумму, если необходимо сделать новый расчёт.\n\n'
-		'Либо обновите список валюты нажав на кнопку «Изменить список валюты».\n'
-		'Там можно будет добавить и удалить валюту из списка либо очистить весь список 😉'
+		'Что бы вернуться на главный экран введите "Главная" или нажмите сюда: /low.'
 	)
 
 	# Проверяем наличие списка валют пользователя
@@ -89,9 +103,9 @@ def calculation(message: Message) -> None:
 		bot_message = 'Ваш список сохраненных валют пуст.'
 		bot_end_msg = (
 			'\nС пустым списком ничего не смогу посчитать 🤔.\n'
-			'Добавьте в ваш список какую-либо валюту нажав на кнопку «Изменить список валюты».'
+			'Добавьте в ваш список какую-либо валюту нажав сюда: /currencies.'
 		)
 
-	markup = edit_currencies_button()
+	markup = course_now_button()
 
 	bot.send_message(message.chat.id, bot_message + bot_end_msg, reply_markup=markup, parse_mode='html')

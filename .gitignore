@@ -128,4 +128,7 @@ dmypy.json
 # Pyre type checker
 .pyre/
 .idea/*
-.env
+../pythonProject3/TelegramBot_exchange_rates/.env
+
+/database/peewee_orm.db
+uploads

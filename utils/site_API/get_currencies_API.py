@@ -23,7 +23,6 @@ def get_value_currency_api(user_currency: Any) -> Any:
 		for currency in user_currency:
 			if currency in data.keys():
 				result[currency] = data[currency]
-
 		return result
 
 	# Вывод курса одной валюты

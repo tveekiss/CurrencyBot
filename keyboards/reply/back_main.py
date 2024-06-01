@@ -15,14 +15,14 @@ def add_back_main_button() -> ReplyKeyboardMarkup:
 	return markup
 
 
-def edit_currencies_button() -> ReplyKeyboardMarkup:
+def course_now_button() -> ReplyKeyboardMarkup:
 	"""
 	Кнопка для перехода к редактированию списка
 
 	:return: markup
 	"""
 	markup = ReplyKeyboardMarkup(resize_keyboard=True)
-	edit_currencies = KeyboardButton(text='Изменить список валют')
+	edit_currencies = KeyboardButton(text='Главная')
 	markup.add(edit_currencies)
 
 	return markup
@@ -34,18 +34,33 @@ def add_back_main_custom_button() -> ReplyKeyboardMarkup:
 
 	:return: markup
 	"""
-	markup = edit_currencies_button()
+	markup = course_now_button()
 	back_main = KeyboardButton(text='Вернуться к выбору периода')
 	markup.add(back_main)
 
 	return markup
 
 
-def remove_back_main_button() -> ReplyKeyboardRemove:
+def main_buttons() -> ReplyKeyboardMarkup:
 	"""
-	Удаление кнопки, если пользователь находится на родительской странице.
+	Кнопки для главной страницы
 
-	:return: ReplyKeyboardRemove()
+	:return: markup
 	"""
+	markup = ReplyKeyboardMarkup(resize_keyboard=True)
+	button1 = KeyboardButton(text='Список валют')
+	button2 = KeyboardButton(text='Посчитать курс')
+	button3 = KeyboardButton(text='Курс за период')
+	markup.row(button1)
+	markup.row(button2, button3)
 
+	return markup
+
+
+def remove_keyboard_button() -> ReplyKeyboardRemove:
+	"""
+	Удаление клавиатуры
+
+	:return: ReplyKeyboardRemove
+	"""
 	return ReplyKeyboardRemove()

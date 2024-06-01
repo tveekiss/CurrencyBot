@@ -1,6 +1,6 @@
 from keyboards.inline.clear_confirm import clear_currency_confirm_buttons
 from keyboards.inline.get_currencies import get_currencies_buttons
-from keyboards.reply.back_main import add_back_main_button, remove_back_main_button
+from keyboards.reply.back_main import add_back_main_button, course_now_button
 from loader import bot
 from telebot.types import Message, CallbackQuery
 
@@ -47,11 +47,11 @@ def get_currencies(message: Message) -> None:
 		# Вывод кнопки «Добавить»
 		markup = get_change_currencies_buttons(get_all_buttons=False)
 
-	bot.send_message(message.chat.id, bot_message, reply_markup=remove_back_main_button(), parse_mode='html')
+	bot.send_message(message.chat.id, bot_message, reply_markup=course_now_button(), parse_mode='html')
 	bot.send_message(message.chat.id, bot_end_msg, reply_markup=markup, parse_mode='html')
 
 
-@bot.message_handler(state='*', func=lambda message: message.text in ['Вернуться', 'Изменить список валют'])
+@bot.message_handler(state='*', func=lambda message: message.text == 'Список валют')
 def back_main_page(message: Message) -> None:
 	"""
 	Возврат на стартовую страницу при нажатии на кнопку «Вернуться».
@@ -60,7 +60,7 @@ def back_main_page(message: Message) -> None:
 	:return: None
 	"""
 	bot.delete_state(message.from_user.id, message.chat.id)
-	add_user_history(message.from_user.id, f'Возврат к списку сохраненных валют по кнопке {message.text}')
+	add_user_history(message.from_user.id, f'Переход к списку валют по кнопке "{message.text}"')
 
 	get_currencies(message)
 
