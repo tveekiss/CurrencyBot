@@ -37,7 +37,6 @@ def get_period_date_currencies(start_date: str, end_date: str) -> json:
 	url = f'{BASE_URL}/timeseries'
 	querystring = {"start_date":start_date,"end_date":end_date}
 	response = requests.get(url, headers=headers, params=querystring)
-	print(response.json())
 
 	return response.json()
 
